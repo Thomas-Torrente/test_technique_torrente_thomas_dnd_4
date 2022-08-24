@@ -9,6 +9,10 @@
 - https://medium.com/@ankit.yadav726/working-with-csv-files-in-php-symfony-5e87ee2b55b
 - https://regex101.com/library/tQ0bN5?orderBy=RELEVANCE&search=slug
 - https://stackoverflow.com/questions/32614584/how-can-i-remove-all-html-tags-from-an-array#:~:text=No%20need%20for%20a%20regex,trim()%20the%20output%2C%20e.g.&text=To%20add%20to%20JessGabriel's%20answer,to%20internal%20function%20parameters%20(php.
+- https://www.php.net/manual/fr/function.ucwords.php
+- https://symfony.com/doc/current/components/console/console_arguments.html
+- https://symfony.com/doc/4.4/console/coloring.html
+- 
 
 
 
@@ -39,9 +43,10 @@ class CreateTableCsvCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-
         /* on récupère link qui  est le paramètre */
         $linkCsv = $input->getArgument('link');
+
+        /* On indique le lien du fichier qui à été donné en paramètre */
         $output->writeln('<info>Lien du fichier csv donné : ' . $linkCsv . '</info>');
 
         /* On définit le chemin du fichier csv et on lui donne comme argument r = read */
@@ -57,17 +62,19 @@ class CreateTableCsvCommand extends Command
         if ($dataHeader[2] == "is_enabled") {
             $dataHeader[2] = "status";
         }
-        /* Je renomme  */
+        /* Je renomme le colonne 3 */
         $dataHeader[3] = "Price";
+        /* J'indéfini la colonne 4 */
         unset($dataHeader[4]);
-
-        $table = new Table($output);
 
         /* J'ajoute dans le tableau du header l'élement slugs */
         $dataHeader = array_merge($dataHeader, ['slugs']);
 
+        /* Je met en majuscule les première lettre de chaque mot */
         $dataHeader = array_map("ucwords", $dataHeader);
 
+        /* Création de la table */
+        $table = new Table($output);
 
 
         /* Je défini le header du tableau grâce à notre variable dataHeader */
@@ -76,7 +83,8 @@ class CreateTableCsvCommand extends Command
 
 
         /* LE BODY DU TABLEAU */
-        /* Je boucle sur  */
+
+        /* Je boucle sur  csvProducts afin d'afficher le reste des lignes */
         while (($dataBody = fgetcsv($csvProducts, 0, ";"))) {
             /* On précise que si le deuxième élèment du tableau est = 1 : */
             if ($dataBody[2] == "1") {
@@ -93,11 +101,6 @@ class CreateTableCsvCommand extends Command
             $slug = str_replace(' ', '-', $slug); // remplacer les espaces du preg par des tirets
             $slug = strtolower($slug);  // on met tout en miniscule
 
-            /* dump($slug); */
-
-            /* J'applique grâce à la fonction array_map la fonction strip_tags à tous les élèments de mon tableau // strip_tags nous permet de supprimer les balise dans une chained e caractere  */
-            //$dataBody = array_map('strip_tags', $dataBody);
-
 
             /* J'ajoute dans le tableau du body les slugs */
             $dataBody = array_merge($dataBody, [$slug]);
@@ -107,20 +110,16 @@ class CreateTableCsvCommand extends Command
 
 
             /* date */
+
             /* on applique à notre colonnes "dates"  la fonctions date() on lui passe en paramètre 2 choses, en premier le format ici "r" / en deuxième on utilise la fonction strtotime() en visant cette même colonne */
             $dataBody[6] = date("r", strtotime($dataBody[6]));
-            $dataBody[5] = str_replace("<br/>", "\n", $dataBody[5]);
 
-            /* formatage html */
+            /* je remplace les <br> par un retour à la ligne grace à \n */
+            $dataBody = str_replace("<br/>", "\n", $dataBody);
 
+            /* Je défini le body du tableau grâce à notre variable dataBody */
             $table->addRow($dataBody, $slug);
         }
-
-
-
-
-
-
 
 
         /* TEST */
@@ -135,7 +134,7 @@ class CreateTableCsvCommand extends Command
         /* Fermeture du fichier */
         fclose($csvProducts);
 
-
-        $output->writeln('Le tableau à été créer avec succès');
+        /* Good job */
+        $output->writeln('<comment>Le tableau à été créer avec succès</comment>');
     }
 }
